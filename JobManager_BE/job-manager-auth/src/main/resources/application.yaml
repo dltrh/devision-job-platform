@@ -1,0 +1,183 @@
+server:
+    port: 8081
+
+spring:
+    application:
+        name: job-manager-auth
+
+    config:
+        import: optional:dotenv:.env
+
+    data:
+        redis:
+            host: ${REDIS_HOST:localhost}
+            port: ${REDIS_PORT:6379}
+            password: ${REDIS_PASSWORD:}
+            timeout: 60000
+            ssl:
+                enabled: ${REDIS_SSL_ENABLED:false}
+
+    mail:
+        host: smtp.gmail.com
+        port: 587
+        username: ${MAIL_USERNAME:your-email@gmail.com}
+        password: ${MAIL_PASSWORD:your-app-password}
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                    starttls:
+                        enable: true
+                        required: true
+                transport:
+                    protocol: smtp
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                format_sql: false
+                jdbc:
+                    batch_size: 20
+                order_inserts: true
+                order_updates: true
+
+    security:
+        oauth2:
+            client:
+                registration:
+                    google:
+                        client-id: ${GOOGLE_CLIENT_ID}
+                        client-secret: ${GOOGLE_CLIENT_SECRET}
+                        scope:
+                            - email
+                            - profile
+                        redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+                provider:
+                    google:
+                        authorization-uri: https://accounts.google.com/o/oauth2/auth
+                        token-uri: https://oauth2.googleapis.com/token
+                        user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+                        user-name-attribute: sub
+
+    kafka:
+        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            properties:
+                spring.json.add.type.headers: true
+        consumer:
+            group-id: job-manager-auth
+        properties:
+            sasl.mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:PLAIN}
+            security.protocol: ${SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL:PLAINTEXT}
+            sasl.jaas.config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+            session.timeout.ms: ${SPRING_KAFKA_PROPERTIES_SESSION_TIMEOUT_MS:45000}
+            client.id: ${SPRING_KAFKA_CLIENT_ID:auth-service-client}
+
+sharding:
+    default-shard: auth_shard_others
+    shards:
+        auth_shard_vn:
+            url: ${SHARD_VN_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+        auth_shard_sg:
+            url: ${SHARD_SG_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+        auth_shard_asia:
+            url: ${SHARD_ASIA_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+        auth_shard_oceania:
+            url: ${SHARD_OCEANIA_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+        auth_shard_na:
+            url: ${SHARD_NA_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+        auth_shard_eu:
+            url: ${SHARD_EU_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+        auth_shard_others:
+            url: ${SHARD_OTHERS_URL}
+            username: ${NEON_USERNAME}
+            password: ${NEON_PASSWORD}
+            maximum-pool-size: 5
+            minimum-idle: 1
+
+eureka:
+    client:
+        service-url:
+            defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+        fetch-registry: true
+        register-with-eureka: true
+    instance:
+        prefer-ip-address: true
+        health-check-url-path: /actuator/health
+
+jwt:
+    jwe:
+        # RSA Private Key for decryption
+        private-key: ${JWE_PRIVATE_KEY}
+        # RSA Public Key for encryption
+        public-key: ${JWE_PUBLIC_KEY}
+    # JWT settings
+    access-token-expiration: 86400000 # 24 hours in milliseconds
+    refresh-token-expiration: 604800000 # 7 days in milliseconds
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: always
+            probes:
+                enabled: true
+    health:
+        livenessstate:
+            enabled: true
+        readinessstate:
+            enabled: true
+
+app:
+    base-url: ${APP_BASE_URL:http://localhost:8081}
+    frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+    activation:
+        token-expiration: 86400000 # 24 hours
+    password-reset:
+        token-expiration: 3600000 # 1 hour
+
+logging:
+    level:
+        com.devision.job_manager_auth.config.sharding: DEBUG
+        com.zaxxer.hikari: DEBUG
+        org.springframework.jdbc: DEBUG

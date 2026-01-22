@@ -1,0 +1,219 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: job-manager-gateway
+
+  config:
+    import: optional:dotenv:.env
+
+  cloud:
+    gateway:
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost"
+              - "http://localhost:80"
+              - "http://52.76.250.138:5173"
+              - "http://52.76.250.138"
+              - "http://52.76.250.138:80"
+              - "https://52.76.250.138:443"
+              - "https://mulan-jm.online"
+              - "https://www.mulan-jm.online"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            exposedHeaders:
+              - "Authorization"
+            maxAge: 3600
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # OAuth2 routes (must be before /api/auth/** to avoid conflicts)
+        - id: job-manager-auth-oauth2
+          uri: ${AUTH_SERVICE_URL:lb://job-manager-auth}
+          predicates:
+            - Path=/api/oauth2/**,/api/login/oauth2/**
+          filters:
+            - StripPrefix=1
+
+        - id: job-manager-auth
+          uri: ${AUTH_SERVICE_URL:lb://job-manager-auth}
+          predicates:
+            - Path=/api/auth/**
+          metadata:
+            public-paths:
+              - /api/auth/register
+              - /api/auth/login
+              - /api/auth/activate
+              - /api/auth/resend-activation
+              - /api/auth/forgot-password
+              - /api/auth/reset-password
+              - /api/auth/countries
+              - /api/auth/oauth2/**
+              - /api/auth/health
+              - /oauth2/**
+              - /login/oauth2/**
+              - /api/auth/refresh
+              - /api/auth/diagnostics/**
+              - /api/auth/validate-token
+
+        - id: job-manager-company
+          uri: ${COMPANY_SERVICE_URL:lb://job-manager-company}
+          predicates:
+            - Path=/api/companies/**
+          filters:
+            - Authentication
+
+        # External Job Posts API (inter-service communication for JobApplicant team)
+        # IMPORTANT: Must come BEFORE job-manager-jobpost to avoid route conflicts
+        - id: job-manager-jobpost-external
+          uri: ${JOBPOST_SERVICE_URL:lb://job-manager-jobpost}
+          predicates:
+            - Path=/api/external/job-posts/**
+
+        - id: job-manager-jobpost
+          uri: ${JOBPOST_SERVICE_URL:lb://job-manager-jobpost}
+          predicates:
+            - Path=/api/job-posts/**, /api/applications/**
+          filters:
+            - Authentication
+
+        # External Search Profiles API (inter-service communication)
+        - id: job-manager-applicant-search-external
+          uri: ${APPLICANT_SEARCH_SERVICE_URL:lb://job-manager-applicant-search}
+          predicates:
+            - Path=/api/search-profiles/**
+          filters:
+            - Authentication
+
+        # Internal Search Profiles API (frontend/internal use)
+        - id: job-manager-applicant-search-internal
+          uri: ${APPLICANT_SEARCH_SERVICE_URL:lb://job-manager-applicant-search}
+          predicates:
+            - Path=/api/internal/search-profiles/**
+          filters:
+            - Authentication
+
+        # Internal Applicant Search API (frontend use)
+        - id: job-manager-applicant-search-applicants
+          uri: ${APPLICANT_SEARCH_SERVICE_URL:lb://job-manager-applicant-search}
+          predicates:
+            - Path=/api/internal/applicants/**
+          filters:
+            - Authentication
+
+        - id: job-manager-subscription-internal
+          uri: ${SUBSCRIPTION_SERVICE_URL:lb://job-manager-subscription}
+          predicates:
+            - Path=/api/internal/subscriptions/**
+          filters:
+            - Authentication
+
+        - id: job-manager-subscription-external
+          uri: ${SUBSCRIPTION_SERVICE_URL:lb://job-manager-subscription}
+          predicates:
+            - Path=/api/subscriptions/**
+          filters:
+            - Authentication
+
+        - id: job-manager-payment-internal
+          uri: ${PAYMENT_SERVICE_URL:lb://job-manager-payment}
+          predicates:
+            - Path=/api/internal/payment/**
+          filters:
+            - Authentication
+
+        # Webhook route must be BEFORE /api/payment/** to match first (more specific path)
+        - id: job-manager-payment-external-webhook
+          uri: ${PAYMENT_SERVICE_URL:lb://job-manager-payment}
+          predicates:
+            - Path=/api/payment/webhooks/**
+
+        - id: job-manager-payment-external
+          uri: ${PAYMENT_SERVICE_URL:lb://job-manager-payment}
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - Authentication
+
+        - id: job-manager-notification
+          uri: ${NOTIFICATION_SERVICE_URL:lb://job-manager-notification}
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - Authentication
+
+# JWT configuration for token validation
+jwt:
+  jwe:
+    validate-via-auth-service: true
+
+# Eureka configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics
+  endpoint:
+    gateway:
+      access: unrestricted
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.devision.job_manager_gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.route: DEBUG
+    reactor.netty: INFO
+
+# Gateway authentication configuration
+gateway:
+  auth:
+    enabled: true
+    auth-service:
+      url: ${GATEWAY_AUTH_SERVICE_URL:http://localhost:8081}
+      validate-endpoint: /api/auth/validate-token
+      timeout-ms: 5000
+    public-paths:
+      - /api/auth/register
+      - /api/auth/login
+      - /api/auth/activate
+      - /api/auth/resend-activation
+      - /api/auth/forgot-password
+      - /api/auth/reset-password
+      - /api/auth/countries
+      - /api/auth/oauth2/**
+      - /api/auth/health
+      - /api/auth/refresh
+      - /api/auth/diagnostics/**
+      - /api/auth/validate-token
+      - /oauth2/**
+      - /login/oauth2/**
+      - /actuator/**
+      - /api/payment/webhooks/**

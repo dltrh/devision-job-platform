@@ -1,0 +1,324 @@
+{
+	"info": {
+		"_postman_id": "jobpost-api-collection",
+		"name": "JobPost API - With Kafka Skills Update",
+		"description": "Complete API collection for JobPost service including Ultimo 4.3.1 Kafka skills endpoint",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Create Job Post",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"title\": \"Senior Backend Developer\",\n  \"description\": \"We are looking for an experienced backend developer with strong skills in Java and Spring Boot. The ideal candidate will have 5+ years of experience building scalable microservices.\",\n  \"salaryType\": \"RANGE\",\n  \"salaryMin\": 80000,\n  \"salaryMax\": 120000,\n  \"salaryNote\": \"USD per year\",\n  \"locationCity\": \"San Francisco\",\n  \"isFresher\": false,\n  \"isAPrivate\": false,\n  \"employmentType\": \"FULL_TIME\",\n  \"expiryAt\": \"2025-06-30T23:59:59\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts"
+					]
+				},
+				"description": "Create a new job post. Returns the created job post with generated ID."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Job Post by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/{{jobPostId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"{{jobPostId}}"
+					]
+				},
+				"description": "Retrieve a single job post by its ID."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get All Company Job Posts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/company/{{companyId}}?page=0&size=10",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"company",
+						"{{companyId}}"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						}
+					]
+				},
+				"description": "Get all job posts for a specific company (published and unpublished)."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Published Company Job Posts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/company/{{companyId}}/published?page=0&size=10",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"company",
+						"{{companyId}}",
+						"published"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						}
+					]
+				},
+				"description": "Get only published job posts for a specific company."
+			},
+			"response": []
+		},
+		{
+			"name": "5. Get All Public Job Posts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/public?page=0&size=10",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"public"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						}
+					]
+				},
+				"description": "Get all published job posts from all companies (public feed)."
+			},
+			"response": []
+		},
+		{
+			"name": "6. Update Job Post",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Senior Backend Developer - Updated\",\n  \"description\": \"Updated job description with new requirements including Docker and Kubernetes experience.\",\n  \"salaryType\": \"RANGE\",\n  \"salaryMin\": 90000,\n  \"salaryMax\": 130000,\n  \"salaryNote\": \"USD per year, competitive benefits\",\n  \"locationCity\": \"San Francisco\",\n  \"fresher\": false,\n  \"aPrivate\": false,\n  \"expiryAt\": \"2025-07-31T23:59:59\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/{{jobPostId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"{{jobPostId}}"
+					]
+				},
+				"description": "Update an existing job post."
+			},
+			"response": []
+		},
+		{
+			"name": "7. Publish Job Post",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/{{jobPostId}}/publish",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"{{jobPostId}}",
+						"publish"
+					]
+				},
+				"description": "Publish a job post to make it publicly visible."
+			},
+			"response": []
+		},
+		{
+			"name": "8. Unpublish Job Post",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/{{jobPostId}}/unpublish",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"{{jobPostId}}",
+						"unpublish"
+					]
+				},
+				"description": "Unpublish a job post to hide it from public view."
+			},
+			"response": []
+		},
+		{
+			"name": "9. ⭐ Update Skills (Kafka Event)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"skillIds\": [\n    \"{{skill1}}\",\n    \"{{skill2}}\",\n    \"{{skill3}}\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/{{jobPostId}}/skills",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"{{jobPostId}}",
+						"skills"
+					]
+				},
+				"description": "⭐ ULTIMO 4.3.1 ENDPOINT ⭐\n\nUpdate job post skills and trigger Kafka event for instant applicant notifications.\n\nThis endpoint:\n1. Updates skills in database\n2. Calculates added/removed skills\n3. Publishes JobPostSkillsChangedEvent to Kafka topic: jobpost.skills.changed\n4. Enables instant notifications to matching applicants\n\nTo test Kafka:\n1. Run docker-compose up kafka zookeeper\n2. Send this request\n3. Check Kafka topic for event:\n   docker exec -it kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic jobpost.skills.changed --from-beginning"
+			},
+			"response": []
+		},
+		{
+			"name": "10. Delete Job Post",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/job-posts/{{jobPostId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"job-posts",
+						"{{jobPostId}}"
+					]
+				},
+				"description": "Delete a job post permanently."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8083",
+			"type": "string"
+		},
+		{
+			"key": "companyId",
+			"value": "550e8400-e29b-41d4-a716-446655440000",
+			"type": "string"
+		},
+		{
+			"key": "jobPostId",
+			"value": "650e8400-e29b-41d4-a716-446655440001",
+			"type": "string"
+		},
+		{
+			"key": "skill1",
+			"value": "750e8400-e29b-41d4-a716-446655440001",
+			"type": "string"
+		},
+		{
+			"key": "skill2",
+			"value": "750e8400-e29b-41d4-a716-446655440002",
+			"type": "string"
+		},
+		{
+			"key": "skill3",
+			"value": "750e8400-e29b-41d4-a716-446655440003",
+			"type": "string"
+		}
+	]
+}

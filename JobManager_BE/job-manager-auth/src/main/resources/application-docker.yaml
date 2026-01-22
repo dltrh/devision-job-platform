@@ -1,0 +1,30 @@
+# Docker/Production Profile Configuration
+# Optimized for EC2 deployment with limited resources
+
+sharding:
+  jpa:
+    hibernate:
+      ddl-auto: none  # Don't auto-update schema in production
+    show-sql: false  # Disable SQL logging in production
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+        query:
+          plan_cache_max_size: 2048
+          plan_parameter_metadata_max_size: 128
+
+logging:
+  level:
+    com.devision.job_manager_auth: INFO
+    com.devision.job_manager_auth.config.sharding: INFO
+    com.zaxxer.hikari: WARN
+    org.springframework.jdbc: WARN
+    org.hibernate: WARN

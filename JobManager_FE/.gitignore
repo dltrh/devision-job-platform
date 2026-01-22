@@ -1,0 +1,9 @@
+node_modules/
+.history/
+personal/
+dist/
+.vite/
+.env*
+.DS_Store
+.idea/
+.vscode/

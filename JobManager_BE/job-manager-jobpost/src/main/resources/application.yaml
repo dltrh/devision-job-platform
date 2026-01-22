@@ -1,0 +1,97 @@
+server:
+    port: 8083
+
+spring:
+    application:
+        name: job-manager-jobpost
+
+    profiles:
+      active: mock
+
+    datasource:
+        url: ${POSTGRES_JOBPOST_URL:jdbc:postgresql://localhost:5434/job_manager_jobpost}
+        username: ${POSTGRES_JOBPOST_USERNAME:postgres}
+        password: ${POSTGRES_JOBPOST_PASSWORD:postgres}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            auto-commit: false
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                jdbc:
+                    batch_size: 20
+                order_inserts: true
+                order_updates: true
+
+    kafka:
+        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        consumer:
+            group-id: jobpost-service-group
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            properties:
+                spring.json.trusted.packages: "*"
+        properties:
+            sasl.mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:PLAIN}
+            security.protocol: ${SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL:PLAINTEXT}
+            sasl.jaas.config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+            session.timeout.ms: ${SPRING_KAFKA_PROPERTIES_SESSION_TIMEOUT_MS:45000}
+            client.id: ${SPRING_KAFKA_CLIENT_ID:jobpost-service-client}
+
+    # Caching Configuration
+    cache:
+        cache-names: companyCountry
+        caffeine:
+            spec: maximumSize=500,expireAfterWrite=3600s # 1 hour TTL, max 500 companies
+
+# Company Service Integration (for country lookup)
+company:
+    service:
+        url: http://${COMPANY_SERVICE_HOST:localhost}:8082
+
+# Application Service Integration (Job Applicant Subsystem)
+application:
+  service:
+    base-url: https://be.serverhub.id.vn  # Job Applicant's Application Service
+
+eureka:
+    client:
+        service-url:
+            defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+        fetch-registry: true
+        register-with-eureka: true
+    instance:
+        prefer-ip-address: true
+        health-check-url-path: /actuator/health
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: always
+            probes:
+                enabled: true
+    health:
+        livenessstate:
+            enabled: true
+        readinessstate:
+            enabled: true
+
+logging:
+    level:
+        com.devision.job_manager_jobpost: DEBUG
+        org.springframework.kafka: INFO
+        org.apache.kafka: WARN
+

@@ -1,0 +1,92 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: job-manager-applicant-search
+
+  datasource:
+    url: ${POSTGRES_APPLICANT_SEARCH_URL:jdbc:postgresql://localhost:5435/job_manager_applicant_search}
+    username: ${POSTGRES_APPLICANT_SEARCH_USERNAME:postgres}
+    password: ${POSTGRES_APPLICANT_SEARCH_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      auto-commit: false
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  data:
+    redis:
+      # Upstash Redis configuration with SSL
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout: 5000ms
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: applicant-search-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      sasl.mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:PLAIN}
+      security.protocol: ${SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.jaas.config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+      session.timeout.ms: ${SPRING_KAFKA_PROPERTIES_SESSION_TIMEOUT_MS:45000}
+      client.id: ${SPRING_KAFKA_CLIENT_ID:applicant-search-service-client}
+
+# External service URLs
+applicant:
+  service:
+    url: ${APPLICANT_SERVICE_URL:https://03ca3e0ae418.ngrok-free.app}
+    auth:
+      token: ${APPLICANT_SERVICE_AUTH_TOKEN:}
+
+subscription:
+  service:
+    url: ${SUBSCRIPTION_SERVICE_URL:http://localhost:8085}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

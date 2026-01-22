@@ -1,0 +1,37 @@
+# ========================================
+# Docker Compose for JobManager Frontend
+# For local development and standalone testing
+# ========================================
+
+services:
+    frontend:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+                VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+                VITE_GATEWAY_API_URL: ${VITE_GATEWAY_API_URL:-http://localhost:8080}
+                VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
+                VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
+                VITE_ENV: ${VITE_ENV:-production}
+                VITE_ENABLE_MOCK_API: ${VITE_ENABLE_MOCK_API:-false}
+        image: hanhdau/jm-frontend:${IMAGE_TAG:-latest}
+        container_name: jm-frontend
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            VITE_ENV: ${VITE_ENV:-production}
+            BACKEND_URL: ${BACKEND_URL:-http://127.0.0.1:8080/api/}
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        network_mode: host
+
+networks:
+    jm-frontend-network:
+        driver: bridge

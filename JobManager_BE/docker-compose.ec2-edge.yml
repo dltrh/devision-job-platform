@@ -1,0 +1,89 @@
+# ========================================
+# EC2-1: Edge & Control Plane
+# Services: Gateway, Discovery, Frontend
+# ========================================
+
+services:
+    # ========================================
+    # Service Discovery (Eureka)
+    # ========================================
+
+    discovery-server:
+        image: ${DOCKERHUB_USERNAME}/jm-discovery:${IMAGE_TAG:-latest}
+        container_name: jm-discovery-server
+        restart: unless-stopped
+        ports:
+            - "8761:8761"
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+        networks:
+            - jm-edge-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 60s
+
+    # ========================================
+    # API Gateway
+    # ========================================
+
+    gateway:
+        image: ${DOCKERHUB_USERNAME}/jm-gateway:${IMAGE_TAG:-latest}
+        container_name: jm-gateway
+        restart: unless-stopped
+        ports:
+            - "8080:8080"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+            # Gateway needs to connect to services on EC2-2 via private IP
+            GATEWAY_AUTH_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8081
+            JOBPOST_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8083
+            COMPANY_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8082
+            APPLICANT_SEARCH_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8084
+            SUBSCRIPTION_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8085
+            PAYMENT_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8086
+            NOTIFICATION_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8087
+        depends_on:
+            discovery-server:
+                condition: service_healthy
+        networks:
+            - jm-edge-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 60s
+
+    # ========================================
+    # Frontend (Nginx)
+    # ========================================
+
+    frontend:
+        image: ${DOCKERHUB_USERNAME}/jm-frontend:${IMAGE_TAG:-latest}
+        container_name: jm-frontend
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            VITE_ENV: production
+        depends_on:
+            gateway:
+                condition: service_healthy
+        networks:
+            - jm-edge-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+networks:
+    jm-edge-network:
+        driver: bridge

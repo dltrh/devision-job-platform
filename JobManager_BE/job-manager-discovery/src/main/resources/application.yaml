@@ -1,0 +1,19 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: job-manager-discovery
+
+eureka:
+  client:
+    register-with-eureka: false  # Don't register itself
+    fetch-registry: false         # Don't fetch registry
+  server:
+    enable-self-preservation: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

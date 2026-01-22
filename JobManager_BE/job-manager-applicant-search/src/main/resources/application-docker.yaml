@@ -1,0 +1,23 @@
+# Docker/Production Profile - Applicant Search Service
+# Optimized for EC2 deployment
+
+spring:
+  datasource:
+    hikari:
+      auto-commit: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        connection:
+          provider_disables_autocommit: true
+        query:
+          plan_cache_max_size: 2048
+
+logging:
+  level:
+    com.devision: INFO
+    org.springframework: WARN
+    org.hibernate: WARN

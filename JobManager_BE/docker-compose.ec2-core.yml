@@ -1,0 +1,249 @@
+# ========================================
+# EC2-2: Core Application Plane
+# Services: All Microservices
+# Infrastructure: External (Upstash Redis, Neon PostgreSQL, External Kafka)
+# ========================================
+
+services:
+    # ========================================
+    # Application Services Layer
+    # ========================================
+
+    auth-service:
+        image: ${DOCKERHUB_USERNAME}/jm-auth:${IMAGE_TAG:-latest}
+        container_name: jm-auth-service
+        restart: unless-stopped
+        ports:
+            - "8081:8081"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            # Database Sharding Configuration - Neon PostgreSQL
+            SHARD_VN_URL: ${SHARD_VN_URL}
+            SHARD_SG_URL: ${SHARD_SG_URL}
+            SHARD_ASIA_URL: ${SHARD_ASIA_URL}
+            SHARD_OCEANIA_URL: ${SHARD_OCEANIA_URL}
+            SHARD_NA_URL: ${SHARD_NA_URL}
+            SHARD_EU_URL: ${SHARD_EU_URL}
+            SHARD_OTHERS_URL: ${SHARD_OTHERS_URL}
+            NEON_USERNAME: ${NEON_USERNAME}
+            NEON_PASSWORD: ${NEON_PASSWORD}
+            # Redis Configuration
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+            OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI}
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+    company-service:
+        image: ${DOCKERHUB_USERNAME}/jm-company:${IMAGE_TAG:-latest}
+        container_name: jm-company-service
+        restart: unless-stopped
+        ports:
+            - "8082:8082"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            SPRING_DATASOURCE_URL: ${POSTGRES_COMPANY_URL}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_COMPANY_USERNAME}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_COMPANY_PASSWORD}
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+    jobpost-service:
+        image: ${DOCKERHUB_USERNAME}/jm-jobpost:${IMAGE_TAG:-latest}
+        container_name: jm-jobpost-service
+        restart: unless-stopped
+        ports:
+            - "8083:8083"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            SPRING_DATASOURCE_URL: ${POSTGRES_JOBPOST_URL}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_JOBPOST_USERNAME}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_JOBPOST_PASSWORD}
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8083/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+    applicant-search-service:
+        image: ${DOCKERHUB_USERNAME}/jm-applicant-search:${IMAGE_TAG:-latest}
+        container_name: jm-applicant-search-service
+        restart: unless-stopped
+        ports:
+            - "8084:8084"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            SPRING_DATASOURCE_URL: ${POSTGRES_APPLICANT_SEARCH_URL}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_APPLICANT_SEARCH_USERNAME}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_APPLICANT_SEARCH_PASSWORD}
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+            APPLICANT_SERVICE_AUTH_TOKEN: ${APPLICANT_SERVICE_AUTH_TOKEN}
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8084/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+    subscription-service:
+        image: ${DOCKERHUB_USERNAME}/jm-subscription:${IMAGE_TAG:-latest}
+        container_name: jm-subscription-service
+        restart: unless-stopped
+        ports:
+            - "8085:8085"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            SPRING_DATASOURCE_URL: ${POSTGRES_SUBSCRIPTION_URL}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_SUBSCRIPTION_USERNAME}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_SUBSCRIPTION_PASSWORD}
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+    payment-service:
+        image: ${DOCKERHUB_USERNAME}/jm-payment:${IMAGE_TAG:-latest}
+        container_name: jm-payment-service
+        restart: unless-stopped
+        ports:
+            - "8086:8086"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            SPRING_DATASOURCE_URL: ${POSTGRES_PAYMENT_URL}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_PAYMENT_USERNAME}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PAYMENT_PASSWORD}
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8086/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+    notification-service:
+        image: ${DOCKERHUB_USERNAME}/jm-notification:${IMAGE_TAG:-latest}
+        container_name: jm-notification-service
+        restart: unless-stopped
+        ports:
+            - "8087:8087"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            EUREKA_INSTANCE_PREFER_IP_ADDRESS: 'true'
+            EUREKA_INSTANCE_IP_ADDRESS: ${EC2_2_PRIVATE_IP}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            SPRING_DATASOURCE_URL: ${POSTGRES_NOTIFICATION_URL}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_NOTIFICATION_USERNAME}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_NOTIFICATION_PASSWORD}
+            SPRING_REDIS_HOST: ${REDIS_HOST}
+            SPRING_REDIS_PORT: ${REDIS_PORT}
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+            SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+            TZ: Asia/Ho_Chi_Minh
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8087/actuator/health"]
+            interval: 30s
+            timeout: 15s
+            retries: 10
+            start_period: 90s
+
+networks:
+    jm-core-network:
+        driver: bridge

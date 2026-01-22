@@ -1,0 +1,74 @@
+server:
+    port: 8087
+
+spring:
+    application:
+        name: job-manager-notification
+
+    # Set default timezone for JSON serialization
+    jackson:
+        time-zone: Asia/Ho_Chi_Minh
+        serialization:
+            write-dates-as-timestamps: false
+
+    datasource:
+        url: ${POSTGRES_NOTIFICATION_URL:jdbc:postgresql://localhost:5438/job_manager_notification}
+        username: ${POSTGRES_NOTIFICATION_USERNAME:postgres}
+        password: ${POSTGRES_NOTIFICATION_PASSWORD:postgres}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            auto-commit: false
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        properties:
+            hibernate:
+                jdbc:
+                    time_zone: Asia/Ho_Chi_Minh
+                    batch_size: 20
+                order_inserts: true
+                order_updates: true
+
+    kafka:
+        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+        consumer:
+            group-id: notification-service-group
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            properties:
+                spring.json.trusted.packages: "*"
+        properties:
+            sasl.mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:PLAIN}
+            security.protocol: ${SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL:PLAINTEXT}
+            sasl.jaas.config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+            session.timeout.ms: ${SPRING_KAFKA_PROPERTIES_SESSION_TIMEOUT_MS:45000}
+            client.id: ${SPRING_KAFKA_CLIENT_ID:notification-service-client}
+
+eureka:
+    client:
+        service-url:
+            defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+        fetch-registry: true
+        register-with-eureka: true
+    instance:
+        prefer-ip-address: true
+        health-check-url-path: /actuator/health
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: always
+            probes:
+                enabled: true
+    health:
+        livenessstate:
+            enabled: true
+        readinessstate:
+            enabled: true

@@ -1,0 +1,279 @@
+# # ========================================
+# # Job Manager - Production Docker Compose
+# # ========================================
+# #
+# # This file is used for production deployment with Docker Hub images.
+# #
+# # Prerequisites:
+# #   1. Set DOCKERHUB_USERNAME environment variable or in .env file
+# #   2. Configure .env file with production values
+# #
+# # Usage:
+# #   docker compose -f docker-compose.prod.yml pull
+# #   docker compose -f docker-compose.prod.yml up -d
+# #
+# # ========================================
+
+# services:
+#   # ========================================
+#   # Kafka Infrastructure
+#   # ========================================
+
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper:7.5.0
+#     container_name: jm-zookeeper
+#     restart: unless-stopped
+#     environment:
+#       ZOOKEEPER_CLIENT_PORT: 2181
+#       ZOOKEEPER_TICK_TIME: 2000
+#     volumes:
+#       - zookeeper-data:/var/lib/zookeeper/data
+#       - zookeeper-logs:/var/lib/zookeeper/log
+#     networks:
+#       - jm-network
+#     healthcheck:
+#       test: ["CMD", "nc", "-z", "localhost", "2181"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   kafka:
+#     image: confluentinc/cp-kafka:7.5.0
+#     container_name: jm-kafka
+#     restart: unless-stopped
+#     depends_on:
+#       zookeeper:
+#         condition: service_healthy
+#     environment:
+#       KAFKA_BROKER_ID: 1
+#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+#       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+#       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+#       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+#     volumes:
+#       - kafka-data:/var/lib/kafka/data
+#     networks:
+#       - jm-network
+#     healthcheck:
+#       test:
+#         [
+#           "CMD",
+#           "kafka-broker-api-versions",
+#           "--bootstrap-server",
+#           "localhost:9092",
+#         ]
+#       interval: 10s
+#       timeout: 10s
+#       retries: 5
+
+#   # ========================================
+#   # Service Discovery (Eureka)
+#   # ========================================
+
+#   discovery-server:
+#     image: ${DOCKERHUB_USERNAME}/jm-discovery:latest
+#     container_name: jm-discovery-server
+#     restart: unless-stopped
+#     ports:
+#       - "8761:8761"
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#     networks:
+#       - jm-network
+#     healthcheck:
+#       test:
+#         [
+#           "CMD",
+#           "wget",
+#           "-q",
+#           "--spider",
+#           "http://localhost:8761/actuator/health",
+#         ]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+
+#   # ========================================
+#   # API Gateway
+#   # ========================================
+
+#   gateway:
+#     image: ${DOCKERHUB_USERNAME}/jm-gateway:latest
+#     container_name: jm-gateway
+#     restart: unless-stopped
+#     ports:
+#       - "8080:8080"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#       GATEWAY_AUTH_SERVICE_URL: http://auth-service:8081
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       auth-service:
+#         condition: service_started
+#     networks:
+#       - jm-network
+
+#   # ========================================
+#   # Application Services
+#   # ========================================
+
+#   auth-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-auth:latest
+#     container_name: jm-auth-service
+#     restart: unless-stopped
+#     ports:
+#       - "8081:8081"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#       OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:http://localhost:8080/api/login/oauth2/code/google}
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+#   company-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-company:latest
+#     container_name: jm-company-service
+#     restart: unless-stopped
+#     ports:
+#       - "8082:8082"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+#   jobpost-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-jobpost:latest
+#     container_name: jm-jobpost-service
+#     restart: unless-stopped
+#     ports:
+#       - "8083:8083"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+#   applicant-search-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-applicant-search:latest
+#     container_name: jm-applicant-search-service
+#     restart: unless-stopped
+#     ports:
+#       - "8084:8084"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+#   subscription-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-subscription:latest
+#     container_name: jm-subscription-service
+#     restart: unless-stopped
+#     ports:
+#       - "8085:8085"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+#   payment-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-payment:latest
+#     container_name: jm-payment-service
+#     restart: unless-stopped
+#     ports:
+#       - "8086:8086"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+#   notification-service:
+#     image: ${DOCKERHUB_USERNAME}/jm-notification:latest
+#     container_name: jm-notification-service
+#     restart: unless-stopped
+#     ports:
+#       - "8087:8087"
+#     env_file:
+#       - .env
+#     environment:
+#       SPRING_PROFILES_ACTIVE: docker
+#       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+#       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#     depends_on:
+#       discovery-server:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - jm-network
+
+# networks:
+#   jm-network:
+#     driver: bridge
+
+# volumes:
+#   zookeeper-data:
+#   zookeeper-logs:
+#   kafka-data:
