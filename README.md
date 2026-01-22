@@ -1,6 +1,23 @@
 # DEVision Job Platform
+This project originated as part of RMIT EEET2582 – Systems Architecture and Design, where development followed a squad-based team structure to simulate real-world software engineering environments.
 
-This project was originally developed as part of a university group project (RMIT EEET2582 Systems Architecture and Design). This repository represents my independent continuation and extension of the system.
+In this course, students were organized into squads of 10, with each squad split into:
+
+Job Manager team (5 students) – company-side recruitment management system
+
+Job Applicant team (5 students) – applicant-facing job application platform
+
+Both teams developed their subsystems independently while coordinating APIs, contracts, and integration so the two systems could communicate as a unified platform.
+
+The initial Job Manager subsystem was built collaboratively by the Mulan – JobManager team under the course organization:
+
+GitHub Organization: https://github.com/ISYS3461-2025C-Mulan-DEVision
+
+Frontend repository: https://github.com/ISYS3461-2025C-Mulan-DEVision/JobManager_FE
+
+Backend repository: https://github.com/ISYS3461-2025C-Mulan-DEVision/JobManager_BE
+
+This repository represents my independent continuation and extension of the Job Manager system, including architectural improvements, new features, refactoring, production hardening, and ongoing maintenance.
 
 ## Overview
 
@@ -151,7 +168,7 @@ See backend service READMEs and Postman collections for full API documentation.
 ## Credits & License
 
 - Original university group project (RMIT EEET2582)
-- Independently extended and maintained by [your name]
+- Independently extended and maintained by Hanh Do
 
 ---
 
